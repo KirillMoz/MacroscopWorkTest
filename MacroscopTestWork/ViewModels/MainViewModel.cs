@@ -27,17 +27,19 @@ namespace MacroscopTestWork.ViewModels
         {
             _opts = options.Value;
             for (int i = 0; i < _opts.DefaultSlotCount; i++) 
-                AddSlot(slotFactory());
+                AddImage(slotFactory());
             LoadAllCommand = new RelayCommand(async _ => await LoadAllAsync());
         }
 
-        private void AddSlot(ImageItemViewModel imageitem)
+        private void AddImage(ImageItemViewModel imageitem)
         {
             imageitem.LoadingStateChanged += RecalculateActive;
             imageitem.ErrorOccurred += ShowError;
             ImageItems.Add(imageitem);
             RecalculateActive();
         }
+
+
 
         private void RecalculateActive() =>
             ActiveDownloads = ImageItems.Count(s => s.IsLoading);

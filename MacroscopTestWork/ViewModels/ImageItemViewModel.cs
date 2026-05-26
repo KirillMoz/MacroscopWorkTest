@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -65,6 +66,20 @@ namespace MacroscopTestWork.ViewModels
             }
         }
 
+        private int _downloadProgress;
+        public int DownloadProgress
+        {
+            get => _downloadProgress;
+            private set
+            {
+                _downloadProgress = value;
+                OnPropertyChanged(nameof(DownloadProgress));
+                OnPropertyChanged(nameof(ProgressText));
+            }
+        }
+
+        public string ProgressText => $"{DownloadProgress}%";
+
         private async Task StopAsync()
         {
             _cts?.Cancel();
@@ -90,14 +105,27 @@ namespace MacroscopTestWork.ViewModels
         private async Task StartDownloadAsync()
         {
             IsLoading = true;
+            DownloadProgress = 0;
             _cts = new CancellationTokenSource();
+
             try
             {
-                Image = await _downloadService.DownloadAsync(Url, _cts.Token);
+                // Симуляция прогресса (так как реальный прогресс сложно получить)
+                var progressTask = SimulateProgressAsync(_cts.Token);
+                var downloadTask = _downloadService.DownloadAsync(Url, _cts.Token);
+
+                var result = await downloadTask;
+                Image = result;
+                DownloadProgress = 100;
+                await progressTask; // Дожидаемся завершения симуляции прогресса
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                DownloadProgress = 0;
+            }
             catch (Exception ex)
             {
+                DownloadProgress = 0;
                 ErrorOccurred?.Invoke($"Ошибка загрузки: {ex.Message}");
             }
             finally
@@ -109,6 +137,18 @@ namespace MacroscopTestWork.ViewModels
             }
         }
 
+        private async Task SimulateProgressAsync(CancellationToken token)
+        {
+            for (int i = 0; i <= 100; i += 10)
+            {
+                if (token.IsCancellationRequested)
+                    break;
+
+                DownloadProgress = i;
+                await Task.Delay(100, token);
+            }
+        }
+
         public ImageItemViewModel(IImageDownloadService DownloadService)
         {
             _downloadService = DownloadService;
@@ -117,7 +157,8 @@ namespace MacroscopTestWork.ViewModels
 
         public async Task StartDownloadIfNeeded()
         {
-            if (!IsLoading && !string.IsNullOrWhiteSpace(Url)) await StartDownloadAsync();
+            if (!IsLoading && !string.IsNullOrWhiteSpace(Url)) 
+                await StartDownloadAsync();
         }
     }
 }

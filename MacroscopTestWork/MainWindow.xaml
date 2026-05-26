@@ -3,47 +3,170 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MacroscopTestWork" xmlns:viewmodels="clr-namespace:MacroscopTestWork.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
+        xmlns:viewmodels="clr-namespace:MacroscopTestWork.ViewModels"
         mc:Ignorable="d"
-        Title="Тестовое задание Macroscop (загрузчик изображений)" Height="450" Width="800">
+        Title="Тестовое задание Macroscop (загрузчик изображений)" 
+        Height="600" 
+        Width="900">
+
+    <Window.Resources>
+        <Style x:Key="ImageCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#F5F5F5"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.2"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ItemsControl Grid.Row="0" ItemsSource="{Binding ImageItems}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Orientation="Vertical" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Grid Margin="0,5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="4*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="LightGray" CornerRadius="4">
-                            <Image Source="{Binding Image}" Stretch="Uniform" />
+        <!-- Заголовок -->
+        <Border Grid.Row="0" Background="#2196F3" Padding="15">
+            <TextBlock Text="Загрузчик изображений" 
+                       FontSize="20" 
+                       FontWeight="Bold" 
+                       Foreground="White" 
+                       HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- Адаптивная сетка с изображениями -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding ImageItems}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" 
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Top"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- Карточка изображения -->
+                        <Border Style="{StaticResource ImageCardStyle}" Width="350">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="200"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Номер слота - убрали сложный конвертер -->
+                                <TextBlock Grid.Row="0" 
+                                           Text="Новое изображение"
+                                           FontWeight="Bold"
+                                           Margin="0,0,0,5"
+                                           FontSize="14"/>
+
+                                <!-- Область для изображения -->
+                                <Border Grid.Row="1" 
+                                        Background="#E0E0E0" 
+                                        CornerRadius="4"
+                                        BorderBrush="#CCCCCC"
+                                        BorderThickness="1">
+                                    <Image Source="{Binding Image}" 
+                                           Stretch="Uniform"
+                                           MaxHeight="200"/>
+                                </Border>
+
+                                <!-- Поле для ввода URL -->
+                                <TextBox Grid.Row="2" 
+                                         Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" 
+                                         Margin="0,10,0,5" 
+                                         Padding="8"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="12"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="False"/>
+
+                                <!-- Кнопка управления -->
+                                <Button Grid.Row="3" 
+                                        Content="{Binding ButtonText}" 
+                                        Command="{Binding ToggleCommand}"
+                                        Background="#2196F3"
+                                        Foreground="White"
+                                        FontWeight="Bold"
+                                        Padding="10,5"
+                                        Margin="0,5"
+                                        Cursor="Hand"
+                                        BorderThickness="0">
+                                    <Button.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="4"/>
+                                        </Style>
+                                    </Button.Resources>
+                                </Button>
+
+                                <!-- Прогресс загрузки -->
+                                <StackPanel Grid.Row="4" 
+                                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Margin="0,5,0,0">
+                                    <TextBlock Text="{Binding ProgressText}" 
+                                               FontSize="11" 
+                                               HorizontalAlignment="Center"
+                                               Margin="0,0,0,3"/>
+                                    <ProgressBar Value="{Binding DownloadProgress, Mode=OneWay}" 
+                                                 Height="15"
+                                                 Minimum="0"
+                                                 Maximum="100"/>
+                                </StackPanel>
+                            </Grid>
                         </Border>
-                        <TextBox Grid.Column="1" Text="{Binding Url, UpdateSourceTrigger=PropertyChanged}" Margin="5,0" VerticalContentAlignment="Center" />
-                        <Button Grid.Column="2" Content="{Binding ButtonText}" Width="90" Command="{Binding ToggleCommand}" Margin="5,0" />
-                    </Grid>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
-        <Button Grid.Row="1" Content="Загрузить все" Command="{Binding LoadAllCommand}" 
-                HorizontalAlignment="Center" Padding="25,8" Margin="0,15" FontSize="14" />
+        <!-- Нижняя панель -->
+        <Border Grid.Row="2" Background="#F0F0F0" Padding="15">
+            <StackPanel>
+                <Button Content="Загрузить все" 
+                        Command="{Binding LoadAllCommand}" 
+                        HorizontalAlignment="Center" 
+                        Padding="30,10" 
+                        Margin="0,0,0,10"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Background="#4CAF50"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="6"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
 
-        <StackPanel Grid.Row="2" Margin="0,10,0,0">
-            <TextBlock Text="Активные загрузки:" HorizontalAlignment="Center" Margin="0,0,0,5" />
-            <ProgressBar Maximum="{Binding ImageItems.Count}" Value="{Binding ActiveDownloads, Mode=OneWay}" Height="20" />
-        </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Активные загрузки:" Margin="0,0,10,0" FontSize="13"/>
+                    <TextBlock Text="{Binding ActiveDownloads}" FontWeight="Bold" FontSize="13"/>
+                    <TextBlock Text=" / " Margin="5,0" FontSize="13"/>
+                    <TextBlock Text="{Binding ImageItems.Count}" FontWeight="Bold" FontSize="13"/>
+                </StackPanel>
+
+                <ProgressBar Maximum="{Binding ImageItems.Count}" 
+                             Value="{Binding ActiveDownloads, Mode=OneWay}" 
+                             Height="20" 
+                             Margin="0,10,0,0"
+                             Minimum="0"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
